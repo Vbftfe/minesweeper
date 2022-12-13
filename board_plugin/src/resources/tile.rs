@@ -22,15 +22,30 @@ impl Tile {
 
     #[cfg(feature = "debug")]
     pub fn console_output(&self) -> String {
-        format!({}, match self {
-            Tile::Bomb => "*".bright_red(),
-            Tile::BombNeighbor(num) => match {
-                1 => "1".cyan(),
-                2 => "2".green(),
-                3 => "3".yellow(),
-                _ => v.to_string().red()
-            },
-            Tile::Empty => " ".normal()
-        })
+        format!(
+            "{}",
+            match self {
+                Tile::Bomb => "*".bright_red(),
+                Tile::BombNeighbor(num) => match num {
+                    1 => "1".cyan(),
+                    2 => "2".green(),
+                    3 => "3".yellow(),
+                    _ => num.to_string().red(),
+                },
+                Tile::Empty => " ".normal(),
+            }
+        )
+    }
+}
+
+#[cfg(feature = "debug")]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn it_works() {
+        let tile = Tile::BombNeighbor(4);
+
+        println!("{}", tile.console_output());
     }
 }
