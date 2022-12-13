@@ -17,7 +17,7 @@ impl Tile {
         //     false
         // }
         // 更加简洁的写法
-        matches!(self, Tile::Empty)
+        matches!(self, Tile::Bomb)
     }
 
     #[cfg(feature = "debug")]
