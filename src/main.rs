@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::WorldInspectorPlugin;
-use board_plugin::BoardPlugin;
+use board_plugin::{resources::BoardOptions, BoardPlugin};
 
 fn main() {
     let mut app = App::new();
@@ -14,7 +14,13 @@ fn main() {
             ..default()
         },
         ..default()
-    }));
+    }))
+    .insert_resource(BoardOptions {
+        map_size: (20, 20),
+        bomb_count: 40,
+        tile_padding: 3.,
+        ..default()
+    });
 
     #[cfg(feature = "debug")]
     app.add_plugin(WorldInspectorPlugin::new());

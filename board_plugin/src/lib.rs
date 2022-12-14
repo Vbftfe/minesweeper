@@ -3,7 +3,7 @@ pub mod resources;
 
 use bevy::log;
 use bevy::prelude::*;
-use resources::tile_map::TileMap;
+use resources::{tile_map::TileMap, BoardOptions};
 
 pub struct BoardPlugin;
 
@@ -15,7 +15,7 @@ impl Plugin for BoardPlugin {
 }
 
 impl BoardPlugin {
-    pub fn create_board() {
+    pub fn create_board(mut commands: Commands) {
         let mut tile_map = TileMap::new(20, 20);
         tile_map.set_bombs(40);
 
