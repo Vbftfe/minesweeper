@@ -18,7 +18,7 @@ pub struct BoardOptions {
     pub map_size: (u16, u16),
     pub bomb_count: u16,
     pub position: BoardPosition,
-    pub title_size: TileSize,
+    pub tile_size: TileSize,
     pub tile_padding: f32,
     pub safe_start: bool,
 }
@@ -40,10 +40,10 @@ impl Default for BoardPosition {
 impl Default for BoardOptions {
     fn default() -> Self {
         BoardOptions {
-            map_size: (15, 15),
+            map_size: (15, 15), // (x, y)
             bomb_count: 30,
             position: BoardPosition::default(),
-            title_size: TileSize::default(),
+            tile_size: TileSize::default(),
             tile_padding: 0.,
             safe_start: false,
         }
