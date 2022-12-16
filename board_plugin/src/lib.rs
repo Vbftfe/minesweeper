@@ -25,7 +25,11 @@ impl BoardPlugin {
         let map_size = board_options.map_size;
         let mut tile_map = TileMap::new(map_size.0, map_size.1);
         let window = windows.get_primary().unwrap();
+        // 设定炸弹数目
         tile_map.set_bombs(board_options.bomb_count);
+        #[cfg(feature = "debug")]
+        log::info!("{}", tile_map.console_output());
+
         let tile_size = actual_tile_size(
             (window.width(), window.height()),
             &board_options.tile_size,
@@ -33,7 +37,34 @@ impl BoardPlugin {
         );
 
         #[cfg(feature = "debug")]
-        log::info!("{}", tile_map.console_output());
+        log::info!("tile size is {}", tile_size);
+
+        // 计算board的中心位置
+        let (board_width, board_height) =
+            (tile_size * map_size.0 as f32, tile_size * map_size.1 as f32);
+        let board_position = board_position((board_width, board_height), board_options.position);
+
+        // 创建board
+        commands
+            .spawn_empty()
+            .insert(Name::new("Board"))
+            .insert(Transform::from_translation(board_position))
+            .insert(GlobalTransform::default())
+            .insert(ComputedVisibility::default())
+            .insert(Visibility { is_visible: true }) // 两个Visibility用来将父级的空元素显示，否则所有子元素都不能显示
+            .with_children(|parent| {
+                parent
+                    .spawn(SpriteBundle {
+                        sprite: Sprite {
+                            color: Color::WHITE,
+                            custom_size: Some(Vec2::new(board_width, board_height)),
+                            ..default()
+                        },
+                        transform: Transform::from_xyz(board_width / 2., board_height / 2., 0.),
+                        ..default()
+                    })
+                    .insert(Name::new("Background"));
+            });
     }
 }
 
@@ -56,11 +87,15 @@ fn actual_tile_size(
 
 fn board_position(
     (board_width, board_height): (f32, f32),
-    (window_width, window_height): (f32, f32),
+    // (window_width, window_height): (f32, f32),
     board_position: BoardPosition,
-) -> BoardPosition {
+) -> Vec3 {
     match board_position {
-        BoardPosition::Custom(vec3) => BoardPosition::Custom(vec3),
-        BoardPosition::Centered { offset: _ } => todo!(), //Vec3::new(, , 0.),
+        BoardPosition::Custom(vec3) => vec3,
+        BoardPosition::Centered { offset } => Vec3::new(
+            -board_width / 2. + offset.x,
+            -board_height / 2. + offset.y,
+            0.,
+        ), //Vec3::new(, , 0.),
     }
 }

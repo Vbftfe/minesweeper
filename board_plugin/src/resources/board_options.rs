@@ -7,7 +7,7 @@ pub enum TileSize {
     Adaptive { min: f32, max: f32 },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum BoardPosition {
     Centered { offset: Vec3 },
     Custom(Vec3),
