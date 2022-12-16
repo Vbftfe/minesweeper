@@ -7,6 +7,8 @@ use resources::BoardPosition;
 use resources::TileSize;
 use resources::{tile_map::TileMap, BoardOptions};
 
+use crate::components::{Bomb, BombNeighbor, Coordinates, Uncover};
+
 pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
@@ -17,16 +19,32 @@ impl Plugin for BoardPlugin {
 }
 
 impl BoardPlugin {
+    fn build(&self, app: &mut App) {
+        // ..
+        #[cfg(feature = "debug")]
+        {
+            // registering custom component to be able to edit it in inspector
+            app.register_inspectable::<Coordinates>();
+            app.register_inspectable::<BombNeighbor>();
+            app.register_inspectable::<Bomb>();
+            app.register_inspectable::<Uncover>();
+        }
+    }
+
     pub fn create_board(
         mut commands: Commands,
         board_options: Res<BoardOptions>,
         windows: Res<Windows>,
+        assets_server: Res<AssetServer>,
     ) {
         let map_size = board_options.map_size;
         let mut tile_map = TileMap::new(map_size.0, map_size.1);
         let window = windows.get_primary().unwrap();
+        let font = assets_server.load("fonts/pixeled.ttf");
+        let bomb_png = assets_server.load("sprites/bomb.png");
         // 设定炸弹数目
         tile_map.set_bombs(board_options.bomb_count);
+
         #[cfg(feature = "debug")]
         log::info!("{}", tile_map.console_output());
 
@@ -64,6 +82,34 @@ impl BoardPlugin {
                         ..default()
                     })
                     .insert(Name::new("Background"));
+            })
+            .with_children(|parent| {
+                // 创建tile
+                for (y, line) in tile_map.iter().enumerate() {
+                    for (x, tile) in line.iter().enumerate() {
+                        parent
+                            .spawn(SpriteBundle {
+                                sprite: Sprite {
+                                    color: Color::GRAY,
+                                    custom_size: Some(Vec2::splat(
+                                        tile_size - board_options.tile_padding,
+                                    )),
+                                    ..default()
+                                },
+                                transform: Transform::from_xyz(
+                                    tile_size * x as f32 + tile_size / 2.,
+                                    tile_size * y as f32 + tile_size / 2.,
+                                    1.,
+                                ),
+                                ..default()
+                            })
+                            .insert(Name::new(format!("Tile ({}, {})", x, y)))
+                            .insert(Coordinates {
+                                x: x as u16,
+                                y: y as u16,
+                            });
+                    }
+                }
             });
     }
 }
