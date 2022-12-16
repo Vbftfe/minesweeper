@@ -85,17 +85,13 @@ fn actual_tile_size(
     }
 }
 
-fn board_position(
-    (board_width, board_height): (f32, f32),
-    // (window_width, window_height): (f32, f32),
-    board_position: BoardPosition,
-) -> Vec3 {
+fn board_position((board_width, board_height): (f32, f32), board_position: BoardPosition) -> Vec3 {
     match board_position {
         BoardPosition::Custom(vec3) => vec3,
         BoardPosition::Centered { offset } => Vec3::new(
             -board_width / 2. + offset.x,
             -board_height / 2. + offset.y,
             0.,
-        ), //Vec3::new(, , 0.),
+        ),
     }
 }
