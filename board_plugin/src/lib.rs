@@ -195,6 +195,7 @@ fn bomb_count_text_bundle(bomb_count: u8, font: Handle<Font>, font_size: f32) ->
             },
         )
         .with_alignment(TextAlignment::CENTER),
+        transform: Transform::from_xyz(0., 0., 1.),
         ..default()
     }
 }
