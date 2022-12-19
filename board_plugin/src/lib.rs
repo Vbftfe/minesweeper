@@ -3,6 +3,9 @@ pub mod resources;
 
 use bevy::log;
 use bevy::prelude::*;
+#[cfg(feature = "debug")]
+use bevy_inspector_egui::RegisterInspectable;
+use resources::tile::Tile;
 use resources::BoardPosition;
 use resources::TileSize;
 use resources::{tile_map::TileMap, BoardOptions};
@@ -13,24 +16,21 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(BoardPlugin::create_board);
+        #[cfg(feature = "debug")]
+        // registering custom component to be able to edit it in inspector
+        {
+            app.register_inspectable::<Coordinates>();
+            app.register_inspectable::<BombNeighbor>();
+            app.register_inspectable::<Bomb>();
+            app.register_inspectable::<Uncover>();
+            app.add_startup_system(BoardPlugin::create_board);
+        }
+
         log::info!("Loaded Board Plugin");
     }
 }
 
 impl BoardPlugin {
-    fn build(&self, app: &mut App) {
-        // ..
-        #[cfg(feature = "debug")]
-        {
-            // registering custom component to be able to edit it in inspector
-            app.register_inspectable::<Coordinates>();
-            app.register_inspectable::<BombNeighbor>();
-            app.register_inspectable::<Bomb>();
-            app.register_inspectable::<Uncover>();
-        }
-    }
-
     pub fn create_board(
         mut commands: Commands,
         board_options: Res<BoardOptions>,
@@ -85,32 +85,117 @@ impl BoardPlugin {
             })
             .with_children(|parent| {
                 // 创建tile
-                for (y, line) in tile_map.iter().enumerate() {
-                    for (x, tile) in line.iter().enumerate() {
-                        parent
-                            .spawn(SpriteBundle {
-                                sprite: Sprite {
-                                    color: Color::GRAY,
-                                    custom_size: Some(Vec2::splat(
-                                        tile_size - board_options.tile_padding,
-                                    )),
-                                    ..default()
-                                },
-                                transform: Transform::from_xyz(
-                                    tile_size * x as f32 + tile_size / 2.,
-                                    tile_size * y as f32 + tile_size / 2.,
-                                    1.,
-                                ),
-                                ..default()
-                            })
-                            .insert(Name::new(format!("Tile ({}, {})", x, y)))
-                            .insert(Coordinates {
-                                x: x as u16,
-                                y: y as u16,
-                            });
-                    }
-                }
+                sapwn_tiles(
+                    parent,
+                    &tile_map,
+                    tile_size,
+                    board_options.tile_padding,
+                    font,
+                    bomb_png,
+                );
             });
+    }
+}
+
+fn sapwn_tiles(
+    parent: &mut ChildBuilder,
+    tile_map: &TileMap,
+    tile_size: f32,
+    tile_padding: f32,
+    font: Handle<Font>,
+    image: Handle<Image>,
+) {
+    for (y, line) in tile_map.iter().enumerate() {
+        for (x, tile) in line.iter().enumerate() {
+            parent
+                .spawn(SpriteBundle {
+                    sprite: Sprite {
+                        color: Color::GRAY,
+                        custom_size: Some(Vec2::splat(tile_size - tile_padding)),
+                        ..default()
+                    },
+                    transform: Transform::from_xyz(
+                        tile_size * x as f32 + tile_size / 2.,
+                        tile_size * y as f32 + tile_size / 2.,
+                        1.,
+                    ),
+                    ..default()
+                })
+                .insert(Name::new(format!("Tile ({}, {})", x, y)))
+                .insert(Coordinates {
+                    x: x as u16,
+                    y: y as u16,
+                })
+                .with_children(|parent| {
+                    // 根据tile的不同类型进行不同的处理
+                    spawn_tile(
+                        parent,
+                        tile,
+                        tile_size,
+                        tile_padding,
+                        font.clone(),
+                        image.clone(),
+                    );
+                });
+        }
+    }
+}
+
+// 根据tile的不同类型做不同的处理
+fn spawn_tile(
+    parent: &mut ChildBuilder,
+    tile: &Tile,
+    tile_size: f32,
+    tile_padding: f32,
+    font: Handle<Font>,
+    image: Handle<Image>,
+) {
+    match *tile {
+        Tile::Bomb => {
+            parent
+                .spawn(SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::splat(tile_size - tile_padding)),
+                        ..Default::default()
+                    },
+                    texture: image,
+                    ..default()
+                })
+                .insert(Bomb);
+        }
+        Tile::BombNeighbor(bomb_count) => {
+            parent
+                .spawn(bomb_count_text_bundle(
+                    bomb_count,
+                    font,
+                    tile_size - tile_padding,
+                ))
+                .insert(BombNeighbor { count: bomb_count });
+        }
+        Tile::Empty => (),
+    }
+}
+
+fn bomb_count_text_bundle(bomb_count: u8, font: Handle<Font>, font_size: f32) -> Text2dBundle {
+    let color = match bomb_count {
+        1 => Color::WHITE,
+        2 => Color::GREEN,
+        3 => Color::YELLOW,
+        4 => Color::ORANGE,
+        _ => Color::PURPLE,
+    };
+
+    Text2dBundle {
+        text: Text::from_section(
+            bomb_count.to_string(),
+            TextStyle {
+                font,
+                font_size,
+                color,
+            },
+        )
+        .with_alignment(TextAlignment::CENTER),
+        ..default()
     }
 }
 
