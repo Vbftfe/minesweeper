@@ -14,6 +14,7 @@ const SQUARE_COORDINATES: [(i8, i8); 8] = [
     (1, 1),
 ];
 
+#[derive(Debug)]
 pub struct TileMap {
     bomb_count: u16,
     height: u16,

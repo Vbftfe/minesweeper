@@ -1,7 +1,10 @@
+pub mod bounds;
 pub mod components;
 pub mod resources;
+pub mod systems;
 
 use bevy::log;
+use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::RegisterInspectable;
@@ -10,7 +13,10 @@ use resources::BoardPosition;
 use resources::TileSize;
 use resources::{tile_map::TileMap, BoardOptions};
 
+use crate::bounds::Bounds2;
 use crate::components::{Bomb, BombNeighbor, Coordinates, Uncover};
+use crate::resources::board::Board;
+use crate::systems::input::event_handle;
 
 pub struct BoardPlugin;
 
@@ -23,9 +29,9 @@ impl Plugin for BoardPlugin {
             app.register_inspectable::<BombNeighbor>();
             app.register_inspectable::<Bomb>();
             app.register_inspectable::<Uncover>();
-            app.add_startup_system(BoardPlugin::create_board);
         }
-
+        app.add_startup_system(BoardPlugin::create_board)
+            .add_system(event_handle);
         log::info!("Loaded Board Plugin");
     }
 }
@@ -94,6 +100,17 @@ impl BoardPlugin {
                     bomb_png,
                 );
             });
+
+        // 将Board作为Resource添加到系统中
+        commands.insert_resource(Board {
+            tile_size,
+            tile_map,
+            bounds: Bounds2 {
+                size: Vec2::new(board_width, board_height),
+                // position: Vec2::new(board_position.x, board_position.y),
+                position: board_position.xy(),
+            },
+        })
     }
 }
 
@@ -178,7 +195,7 @@ fn spawn_tile(
 
 fn bomb_count_text_bundle(bomb_count: u8, font: Handle<Font>, font_size: f32) -> Text2dBundle {
     let color = match bomb_count {
-        1 => Color::WHITE,
+        1 => Color::BLUE,
         2 => Color::GREEN,
         3 => Color::YELLOW,
         4 => Color::ORANGE,
